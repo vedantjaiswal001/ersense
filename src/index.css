@@ -1,0 +1,362 @@
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------ *
+ *  ER Sense - design tokens
+ *  A crafted developer-tool aesthetic: warm charcoal base, a single
+ *  confident coral "signal" accent, hairline borders, mono for code.
+ * ------------------------------------------------------------------ */
+@theme {
+  /* Surfaces & text are wired to runtime CSS vars so the theme can flip */
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-elevated: var(--elevated);
+  --color-inset: var(--inset);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-faint: var(--faint);
+
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+
+  --color-critical: var(--critical);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-success: var(--success);
+
+  --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', 'JetBrains Mono',
+    'Fira Code', monospace;
+
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 11px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+}
+
+/* ---- Dark theme (default) ---------------------------------------- */
+:root {
+  --bg: #0a0a0b;
+  --panel: #101013;
+  --elevated: #16161a;
+  --inset: #0c0c0e;
+  --line: #232329;
+  --line-strong: #31313a;
+
+  --fg: #ededf0;
+  --muted: #a3a3ac;
+  --subtle: #74747e;
+  --faint: #4b4b53;
+
+  --brand: #ff6a3d;
+  --brand-strong: #ff855f;
+  --brand-soft: rgba(255, 106, 61, 0.14);
+
+  --critical: #f0555a;
+  --warning: #f2b04a;
+  --info: #5aa0ff;
+  --success: #46c48a;
+
+  --grid: rgba(255, 255, 255, 0.022);
+  --glow: rgba(255, 106, 61, 0.11);
+  --shadow-panel: 0 1px 0 0 rgba(255, 255, 255, 0.03) inset,
+    0 24px 60px -30px rgba(0, 0, 0, 0.8);
+  color-scheme: dark;
+}
+
+/* ---- Light theme -------------------------------------------------- */
+[data-theme='light'] {
+  --bg: #f6f6f4;
+  --panel: #ffffff;
+  --elevated: #ffffff;
+  --inset: #f1f1ee;
+  --line: #e5e4e0;
+  --line-strong: #d6d5cf;
+
+  --fg: #17171a;
+  --muted: #55555c;
+  --subtle: #78787f;
+  --faint: #a8a8ae;
+
+  --brand: #e04f24;
+  --brand-strong: #c8431c;
+  --brand-soft: rgba(224, 79, 36, 0.1);
+
+  --critical: #d63a41;
+  --warning: #b7791f;
+  --info: #2f6fe0;
+  --success: #1f9d63;
+
+  --grid: rgba(0, 0, 0, 0.028);
+  --glow: rgba(224, 79, 36, 0.08);
+  --shadow-panel: 0 1px 2px rgba(16, 16, 20, 0.04),
+    0 18px 40px -28px rgba(16, 16, 20, 0.22);
+  color-scheme: light;
+}
+
+/* ------------------------------------------------------------------ *
+ *  Base
+ * ------------------------------------------------------------------ */
+* {
+  border-color: var(--line);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-feature-settings: 'ss01', 'cv01', 'cv03';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Ambient backdrop: faint grid + a single warm glow up top */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(
+      620px 340px at 50% -8%,
+      var(--glow),
+      transparent 70%
+    ),
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 100% 100%, 46px 46px, 46px 46px;
+  background-position: 0 0, 0 0, 0 0;
+  mask-image: radial-gradient(circle at 50% 20%, #000 40%, transparent 92%);
+}
+
+::selection {
+  background: var(--brand);
+  color: #fff;
+}
+
+/* Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--subtle);
+  background-clip: content-box;
+}
+
+/* Focus ring - accessible, on-brand */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* ------------------------------------------------------------------ *
+ *  Reusable component utilities
+ * ------------------------------------------------------------------ */
+@utility panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+}
+
+@utility hairline {
+  border: 1px solid var(--line);
+}
+
+@utility mono {
+  font-family: var(--font-mono);
+  font-feature-settings: 'zero', 'ss02';
+}
+
+/* ------------------------------------------------------------------ *
+ *  Motion
+ * ------------------------------------------------------------------ */
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+@keyframes pulseDot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.82);
+  }
+}
+@keyframes traceLine {
+  from {
+    stroke-dashoffset: 220;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.rise-in {
+  animation: riseIn 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.fade-in {
+  animation: fadeIn 0.4s ease both;
+}
+.pulse-dot {
+  animation: pulseDot 1.5s ease-in-out infinite;
+}
+
+/* Skeleton shimmer for loading */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--elevated);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.05),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+[data-theme='light'] .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 0, 0, 0.04),
+    transparent
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ *  Syntax highlighting tokens (theme-aware)
+ * ------------------------------------------------------------------ */
+.hl-c {
+  color: var(--faint);
+  font-style: italic;
+}
+.hl-s {
+  color: var(--success);
+}
+.hl-n,
+.hl-l {
+  color: var(--warning);
+}
+.hl-k {
+  color: var(--brand-strong);
+}
+.hl-f {
+  color: var(--info);
+}
+
+/* ------------------------------------------------------------------ *
+ *  "Vitals scan" line shown while analyzing (ER / triage motif)
+ * ------------------------------------------------------------------ */
+.scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--brand) 20%,
+    var(--brand-strong) 50%,
+    var(--brand) 80%,
+    transparent
+  );
+  box-shadow: 0 0 16px 3px var(--glow);
+  animation: scan 1.6s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+.scanline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 64px;
+  transform: translateY(-64px);
+  background: linear-gradient(var(--brand-soft), transparent);
+  opacity: 0.7;
+}
+@keyframes scan {
+  0% {
+    top: 0%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
