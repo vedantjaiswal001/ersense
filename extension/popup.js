@@ -333,3 +333,21 @@ refreshEngine()
 refreshMeta()
 loadCaptured()
 loadPending()
+
+// Live updates (mainly for the docked side panel, which stays open).
+try {
+  chrome.runtime.onMessage.addListener((m) => {
+    if (m && m.type === 'ersense-refresh-captured') loadCaptured()
+    else if (m && m.type === 'ersense-refresh-pending') loadPending()
+  })
+} catch {
+  /* ignore */
+}
+try {
+  chrome.tabs.onActivated.addListener(loadCaptured)
+  chrome.tabs.onUpdated.addListener((id, info) => {
+    if (info.status === 'complete') loadCaptured()
+  })
+} catch {
+  /* ignore */
+}

@@ -7,6 +7,24 @@
  */
 const MAX_PER_TAB = 25
 
+// Clicking the toolbar icon opens the side panel (instead of a popup).
+try {
+  chrome.sidePanel
+    .setPanelBehavior({ openPanelOnActionClick: true })
+    .catch(() => {})
+} catch {
+  /* sidePanel unsupported on very old Chrome */
+}
+
+// Notify any open side panel so it can refresh live.
+function notifyUI(type) {
+  try {
+    chrome.runtime.sendMessage({ type }, () => void chrome.runtime.lastError)
+  } catch {
+    /* no receiver open; ignore */
+  }
+}
+
 async function getMap() {
   const o = await chrome.storage.session.get('captured')
   return o.captured || {}
@@ -36,6 +54,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       map[tabId] = list.slice(-MAX_PER_TAB)
       setMap(map)
       setBadge(tabId, map[tabId].length)
+      notifyUI('ersense-refresh-captured')
     })
     return
   }
@@ -100,13 +119,12 @@ function setupMenu() {
 chrome.runtime.onInstalled.addListener(setupMenu)
 chrome.runtime.onStartup.addListener(setupMenu)
 
-chrome.contextMenus.onClicked.addListener((info) => {
+chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === 'ersense-explain' && info.selectionText) {
     chrome.storage.session.set({ pending: info.selectionText }).then(() => {
-      if (chrome.action.openPopup) {
-        chrome.action.openPopup().catch(() => {
-          /* not allowed outside a user gesture on some Chrome versions */
-        })
+      notifyUI('ersense-refresh-pending')
+      if (tab && chrome.sidePanel && chrome.sidePanel.open) {
+        chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => {})
       }
     })
   }
