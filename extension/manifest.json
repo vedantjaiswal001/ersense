@@ -33,6 +33,11 @@
     },
     {
       "matches": ["<all_urls>"],
+      "js": ["content-detect.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["<all_urls>"],
       "js": ["content-main.js"],
       "run_at": "document_start",
       "world": "MAIN"

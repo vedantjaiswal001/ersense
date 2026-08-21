@@ -5,7 +5,8 @@ The browser version of [ER Sense](https://vedantjaiswal001.github.io/ersense/). 
 ## Features
 
 - **Auto-capture** - a content script hooks `window.onerror` and unhandled promise rejections on the top frame of every page. The toolbar icon shows a badge with the count, and the side panel lists the errors so you can explain the latest with one click. (It intentionally does not hook `console.error` - that would capture third-party log noise and mis-attribute every site's logs to the extension.)
-- **Screen capture (AI vision)** - click **Capture**, drag a box around anything on screen - a LeetCode "Wrong Answer" with its code, a compiler's output, a stack trace in a panel - and Gemini reads the image and explains the bug and fix. This is the answer for output that isn't a thrown JavaScript error (server-side judge results, rendered tracebacks) and so can't be auto-captured. Needs a Gemini key (offline mode can't read images).
+- **Auto-explain failed runs** - press Run or Submit on LeetCode (or any site), and if a failure verdict appears - "Wrong Answer", "Runtime Error", a traceback, a compile error - ER Sense notices, captures your screen (code + verdict), and explains it automatically with no clicks. Where it doesn't see the Run click it offers a one-click "Explain it" instead. Toggle it off in Settings; needs a Gemini key for the automatic screenshot path.
+- **Screen capture (AI vision)** - click **Capture**, drag a box around anything on screen - a LeetCode "Wrong Answer" with its code, a compiler's output, a stack trace in a panel - and Gemini reads the image and explains the bug and fix. This is the manual version of auto-explain, for output that isn't a thrown JavaScript error. Needs a Gemini key (offline mode can't read images).
 - **Right-click to explain** - select any error text on a page, right-click, and choose "Explain with ER Sense".
 - **Docked side panel** - clicking the toolbar icon opens ER Sense as a persistent Chrome side panel (not a transient popup), so it stays open while you browse. Paste an error, stack trace, or code and get the same three modes (Error Explanation, Code Doctor, Debug), issue cards with line numbers, and a Fix All block. The panel refreshes live as new errors are captured and as you switch tabs.
 - **Bring-your-own-key** - add a free Gemini key in the side panel's Settings; stored locally, sent directly to Google. Works offline (built-in error library) with no key.
@@ -55,7 +56,8 @@ extension/
   popup.html / popup.css / popup.js    # shared analyzer + settings UI
   background.js                        # service worker: capture store, badge, side panel, context menu
   content-main.js                      # MAIN world: hooks error events
-  content-bridge.js                    # isolated world: relays to the service worker
+  content-bridge.js                    # isolated world: relays captured errors to the worker
+  content-detect.js                    # isolated world: detects failed run/submit verdicts
   lib/                                 # shared engine (same as the web app)
   icons/
 ```

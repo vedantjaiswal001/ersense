@@ -80,6 +80,26 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     })
     return true
   }
+
+  // A failed run/submit verdict was detected on the page (Wrong Answer, etc.).
+  if (msg && msg.type === 'ersense-verdict' && sender.tab) {
+    const verdict = { text: msg.text || '', auto: !!msg.auto, url: sender.tab.url, tabId: sender.tab.id }
+    chrome.storage.session.set({ verdict }).then(() => {
+      setBadge(sender.tab.id, 0) // clear count badge
+      chrome.action.setBadgeText({ tabId: sender.tab.id, text: '!' }).catch(() => {})
+      chrome.action.setBadgeBackgroundColor({ tabId: sender.tab.id, color: '#f2b04a' }).catch(() => {})
+      notifyUI('ersense-verdict')
+    })
+    return
+  }
+
+  if (msg && msg.type === 'ersense-get-verdict') {
+    chrome.storage.session.get('verdict').then((o) => {
+      sendResponse({ verdict: o.verdict || null })
+      chrome.storage.session.remove('verdict')
+    })
+    return true
+  }
 })
 
 // Reset a tab's captured errors when it starts navigating.

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>LeetCode Sim</title>
+<style>body{font-family:system-ui;background:#0b0b0d;color:#eee;padding:20px}
+pre{background:#111;padding:12px;border-radius:8px}
+button{font:600 14px system-ui;padding:8px 14px;border-radius:8px;border:1px solid #333;background:#1a1a1a;color:#eee;cursor:pointer;margin-right:8px}
+.verdict{margin-top:16px;color:#f0555a;font-weight:700;font-size:18px}
+.panel{margin-top:8px;color:#ccc;white-space:pre-wrap}</style>
+</head>
+<body>
+<h3>Add Two Numbers</h3>
+<pre id="code">class Solution:
+    def addTwoNumbers(self, l1, l2):
+        dummy = ListNode(0)
+        cur = dummy
+        while l1 and l2:
+            cur.next = ListNode(l1.val + l2.val)
+            cur = cur.next
+            l1 = l1.next
+            l2 = l2.next
+        return dummy.next</pre>
+<button id="runBtn" title="Run">&#9658; Run</button>
+<button id="submitBtn">Submit</button>
+<div id="result"></div>
+<script>
+  function showVerdict(txt) {
+    const d = document.createElement('div')
+    d.className = 'verdict'
+    d.textContent = 'Wrong Answer'
+    const p = document.createElement('div')
+    p.className = 'panel'
+    p.textContent = txt
+    const r = document.getElementById('result')
+    r.appendChild(d); r.appendChild(p)
+  }
+  document.getElementById('runBtn').addEventListener('click', () => {
+    setTimeout(() => showVerdict('13 / 1569 testcases passed\nInput: l1=[2,4,3] l2=[5,6,4]\nOutput: [7,10,7]\nExpected: [7,0,8]'), 400)
+  })
+  window.__showVerdict = showVerdict
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 import { analyzeError } from './lib/analyze.js'
 import { testApiKey, explainImageWithGemini } from './lib/gemini.js'
-import { getApiKey, setApiKey } from './lib/storage.js'
+import { getApiKey, setApiKey, getAutoExplain, setAutoExplain } from './lib/storage.js'
 import { MODE_META } from './lib/classify.js'
 import { highlightToHTML, escapeHtml } from './lib/highlight.js'
 
@@ -26,6 +26,7 @@ const edGutter = $('edGutter')
 const edBand = $('edBand')
 const captureBtn = $('captureBtn')
 const shotEl = $('shot')
+const autobar = $('autobar')
 
 // Must match the editor CSS (font-size 12 * line-height 1.55, padding 10).
 const LINE_H = 12 * 1.55
@@ -472,6 +473,91 @@ async function analyzeShot(dataUrl) {
   }
 }
 
+// Capture the whole visible tab (no drag overlay) - used by auto-explain.
+async function autoCaptureViewport() {
+  let tab
+  try {
+    ;[tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+  } catch {
+    tab = null
+  }
+  if (!tab || !tab.id) return false
+  if (/^(chrome|edge|brave|about|chrome-extension|devtools|view-source):/i.test(tab.url || '')) return false
+  let dataUrl
+  try {
+    dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' })
+  } catch {
+    return false
+  }
+  if (!dataUrl) return false
+  showShot(dataUrl)
+  await analyzeShot(dataUrl)
+  return true
+}
+
+/* ------------------------------------------------------------------ */
+/*  Auto-explain a failed run (Wrong Answer, runtime error, ...)       */
+/* ------------------------------------------------------------------ */
+function hideAutoBar() {
+  if (!autobar) return
+  autobar.classList.add('hidden')
+  autobar.innerHTML = ''
+}
+function showAutoBar(html) {
+  if (!autobar) return
+  autobar.innerHTML = html
+  autobar.classList.remove('hidden')
+  const x = autobar.querySelector('.autobar-close')
+  if (x) x.addEventListener('click', hideAutoBar)
+}
+
+// Run the full auto-explain: prefer a screenshot (includes your code) when a
+// key is set; otherwise fall back to analyzing the verdict text we scraped.
+async function runAutoExplain(verdict) {
+  hideAutoBar()
+  if (getApiKey()) {
+    showAutoBar(
+      '<span class="autobar-dot"></span><span>Failed run detected - reading your screen…</span>',
+    )
+    const ok = await autoCaptureViewport()
+    if (ok) {
+      hideAutoBar()
+      return
+    }
+    // Screenshot not possible (restricted page) - fall back to the text.
+  }
+  if (verdict.text) {
+    input.value = verdict.text
+    refreshMeta()
+    if (!getApiKey()) {
+      showAutoBar(
+        '<span class="autobar-dot"></span><span>Failed run detected. Explained from the result text - add a Gemini key and use <b>Capture</b> to include your code.</span><button class="autobar-close" title="Dismiss">✕</button>',
+      )
+    }
+    explain()
+  }
+}
+
+async function handleVerdict() {
+  if (!getAutoExplain()) return
+  if (running) return
+  const resp = await sendBg({ type: 'ersense-get-verdict' })
+  const verdict = resp && resp.verdict
+  if (!verdict) return
+  if (verdict.auto) {
+    runAutoExplain(verdict)
+  } else {
+    // Detected, but we didn't see a Run/Submit click - offer one click.
+    showAutoBar(
+      '<span class="autobar-dot"></span><span>A failed result may be on this page.</span>' +
+        '<button class="autobar-go" id="autoGo">Explain it</button>' +
+        '<button class="autobar-close" title="Dismiss">✕</button>',
+    )
+    const go = $('autoGo')
+    if (go) go.addEventListener('click', () => runAutoExplain(verdict))
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  Captured errors                                                    */
 /* ------------------------------------------------------------------ */
@@ -540,7 +626,11 @@ async function loadPending() {
 function showSettings(show) {
   $('settingsView').classList.toggle('hidden', !show)
   $('mainView').classList.toggle('hidden', show)
-  if (show) $('apikey').value = getApiKey()
+  if (show) {
+    $('apikey').value = getApiKey()
+    const auto = $('autoExplain')
+    if (auto) auto.checked = getAutoExplain()
+  }
 }
 
 $('settingsBtn').addEventListener('click', () => showSettings(true))
@@ -572,6 +662,10 @@ $('removeKey').addEventListener('click', () => {
   refreshEngine()
   $('testStatus').textContent = ''
 })
+{
+  const auto = $('autoExplain')
+  if (auto) auto.addEventListener('change', () => setAutoExplain(auto.checked))
+}
 
 /* ------------------------------------------------------------------ */
 /*  Wire up                                                            */
@@ -596,18 +690,23 @@ refreshEngine()
 refreshMeta()
 loadCaptured()
 loadPending()
+handleVerdict()
 
 // Live updates (mainly for the docked side panel, which stays open).
 try {
   chrome.runtime.onMessage.addListener((m) => {
     if (m && m.type === 'ersense-refresh-captured') loadCaptured()
     else if (m && m.type === 'ersense-refresh-pending') loadPending()
+    else if (m && m.type === 'ersense-verdict') handleVerdict()
   })
 } catch {
   /* ignore */
 }
 try {
-  chrome.tabs.onActivated.addListener(loadCaptured)
+  chrome.tabs.onActivated.addListener(() => {
+    loadCaptured()
+    handleVerdict()
+  })
   chrome.tabs.onUpdated.addListener((id, info) => {
     if (info.status === 'complete') loadCaptured()
   })

@@ -43,6 +43,10 @@ export const clearApiKey = () => remove('apiKey')
 export const getModel = () => read('model', null)
 export const setModel = (v) => write('model', v)
 
+/* ---- Auto-explain failed runs (LeetCode etc.) -------------------- */
+export const getAutoExplain = () => read('autoExplain', true) !== false
+export const setAutoExplain = (v) => write('autoExplain', !!v)
+
 /* ---- Theme -------------------------------------------------------- */
 export const getTheme = () => read('theme', 'dark')
 export const setTheme = (v) => write('theme', v)

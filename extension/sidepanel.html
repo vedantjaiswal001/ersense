@@ -33,6 +33,7 @@
       </header>
 
       <main class="main" id="mainView">
+        <div id="autobar" class="autobar hidden"></div>
         <div id="captured" class="captured hidden"></div>
 
         <div class="editor" id="editor">
@@ -90,6 +91,15 @@
             <span id="testStatus" class="test-status"></span>
           </div>
           <p class="privacy">Your key is stored only in this browser and sent directly to Google. Without a key, the extension uses its built-in offline error library.</p>
+
+          <div class="toggle-row">
+            <div class="toggle-text">
+              <div class="toggle-title">Auto-explain failed runs</div>
+              <div class="toggle-sub">When you Run or Submit on LeetCode and similar sites and the result is wrong, ER Sense captures your screen and explains it automatically. Needs a Gemini key.</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="autoExplain" checked /><span class="slider"></span></label>
+          </div>
+
           <button id="saveKey" class="btn-primary full">Save</button>
         </div>
       </section>
