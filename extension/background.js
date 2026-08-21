@@ -86,13 +86,19 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 })
 
 // Right-click "Explain with ER Sense" on selected text.
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: 'ersense-explain',
-    title: 'Explain with ER Sense',
-    contexts: ['selection'],
+// removeAll() first so a reload/update can't throw a duplicate-id error.
+function setupMenu() {
+  chrome.contextMenus.removeAll(() => {
+    void chrome.runtime.lastError
+    chrome.contextMenus.create({
+      id: 'ersense-explain',
+      title: 'Explain with ER Sense',
+      contexts: ['selection'],
+    })
   })
-})
+}
+chrome.runtime.onInstalled.addListener(setupMenu)
+chrome.runtime.onStartup.addListener(setupMenu)
 
 chrome.contextMenus.onClicked.addListener((info) => {
   if (info.menuItemId === 'ersense-explain' && info.selectionText) {

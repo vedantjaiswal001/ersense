@@ -30,7 +30,6 @@
     <button id="b-type">Throw TypeError</button>
     <button id="b-ref">Throw ReferenceError</button>
     <button id="b-reject">Unhandled promise rejection</button>
-    <button id="b-console">console.error(...)</button>
 
     <script>
       document.getElementById('b-type').addEventListener('click', function () {
@@ -42,9 +41,6 @@
       })
       document.getElementById('b-reject').addEventListener('click', function () {
         Promise.reject(new Error('Something failed asynchronously'))
-      })
-      document.getElementById('b-console').addEventListener('click', function () {
-        console.error('TypeError: cannot read property of undefined at app.js:42')
       })
 
       // Fire one automatically shortly after load so you can see capture without clicking.

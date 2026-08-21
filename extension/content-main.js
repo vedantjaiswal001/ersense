@@ -1,9 +1,15 @@
 /**
  * content-main.js  (runs in the page's MAIN world)
  *
- * Captures runtime errors, unhandled promise rejections, and console.error
- * calls, then posts them to the isolated bridge via window.postMessage.
+ * Captures genuine uncaught runtime errors and unhandled promise rejections,
+ * then posts them to the isolated bridge via window.postMessage.
  * MAIN-world scripts can't use chrome.* APIs, hence the postMessage relay.
+ *
+ * Note: we deliberately do NOT override console.error. Doing so re-attributes
+ * every page's console.error() call to this content script (polluting the
+ * extension's error log) and captures non-errors (warnings, third-party
+ * logging like Google Identity Services). Uncaught errors + rejections are
+ * the real signal.
  */
 ;(function () {
   const MARK = '__ERSENSE_CAPTURE__'
@@ -39,28 +45,4 @@
     else text = String(r)
     send({ kind: 'rejection', text: ('Unhandled promise rejection: ' + text).slice(0, 6000), ts: Date.now() })
   })
-
-  // console.error(...)
-  const original = console.error
-  console.error = function (...args) {
-    try {
-      const text = args
-        .map((a) => {
-          if (a instanceof Error) return a.stack || `${a.name}: ${a.message}`
-          if (a && typeof a === 'object') {
-            try {
-              return JSON.stringify(a)
-            } catch {
-              return String(a)
-            }
-          }
-          return String(a)
-        })
-        .join(' ')
-      if (text && text.trim()) send({ kind: 'console', text: text.slice(0, 6000), ts: Date.now() })
-    } catch {
-      /* ignore */
-    }
-    return original.apply(this, args)
-  }
 })()

@@ -4,7 +4,7 @@ The browser version of [ER Sense](https://vedantjaiswal001.github.io/ersense/). 
 
 ## Features
 
-- **Auto-capture** - a content script hooks `window.onerror`, unhandled promise rejections, and `console.error` on every page. The toolbar icon shows a badge with the count, and the popup lists the errors so you can explain the latest with one click.
+- **Auto-capture** - a content script hooks `window.onerror` and unhandled promise rejections on the top frame of every page. The toolbar icon shows a badge with the count, and the popup lists the errors so you can explain the latest with one click. (It intentionally does not hook `console.error` - that would capture third-party log noise and mis-attribute every site's logs to the extension.)
 - **Right-click to explain** - select any error text on a page, right-click, and choose "Explain with ER Sense".
 - **Popup analyzer** - paste an error, stack trace, or code and get the same three modes (Error Explanation, Code Doctor, Debug), issue cards with line numbers, and a Fix All block.
 - **Bring-your-own-key** - add a free Gemini key in the popup's Settings; stored locally, sent directly to Google. Works offline (built-in error library) with no key.
@@ -18,7 +18,7 @@ The browser version of [ER Sense](https://vedantjaiswal001.github.io/ersense/). 
 
 ## How auto-capture works (and how to test it)
 
-A MAIN-world content script hooks `window.onerror`, `unhandledrejection`, and `console.error` on every page. When the page throws, the error is relayed to the service worker, stored per tab, and the toolbar badge shows the count. Open the popup to see the list and click **Explain latest**.
+A MAIN-world content script hooks `window.onerror` and `unhandledrejection` on the page's top frame. When the page throws, the error is relayed to the service worker, stored per tab, and the toolbar badge shows the count. Open the popup to see the list and click **Explain latest**.
 
 **Important limitation:** errors you type into the **DevTools Console** (e.g. running `null.foo` there) are *not* captured. The browser reports console-typed exceptions only to DevTools via the inspector protocol - they are never dispatched as the page's `error` event, so no extension can see them (and `chrome.debugger`, the only API that could, can't attach while DevTools is open). This is a browser behavior, not an extension bug. Capture works for real errors thrown by page scripts.
 

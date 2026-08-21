@@ -10,10 +10,17 @@
     if (event.source !== window) return
     const data = event.data
     if (!data || data[MARK] !== true || !data.payload) return
+    // Bail if the extension was reloaded and this content script is orphaned.
+    if (!chrome.runtime || !chrome.runtime.id) return
     try {
-      chrome.runtime.sendMessage({ type: 'ersense-capture', error: data.payload })
+      // Provide a callback that reads lastError, so a failed delivery (e.g. the
+      // service worker restarting, or the frame being torn down) is swallowed
+      // instead of surfacing as an "Unchecked runtime.lastError" console error.
+      chrome.runtime.sendMessage({ type: 'ersense-capture', error: data.payload }, () => {
+        void chrome.runtime.lastError
+      })
     } catch {
-      /* extension context may be gone during reload; ignore */
+      /* extension context invalidated during reload; ignore */
     }
   })
 })()

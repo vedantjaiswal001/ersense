@@ -232,8 +232,8 @@ function renderCaptured(errors, tabId) {
   if (!errors.length) {
     capturedEl.className = 'captured captured-idle'
     capturedEl.innerHTML =
-      '<span class="idle-dot"></span><span>Watching this page &mdash; no errors captured yet.</span>' +
-      '<span class="idle-hint" title="Errors thrown by the page are captured automatically. Errors typed into the DevTools console are reported only to DevTools, so no extension can capture those.">?</span>'
+      '<span class="idle-dot"></span><span>Watching this page for JavaScript errors.</span>' +
+      '<span class="idle-hint" title="Auto-capture catches JavaScript errors the page itself throws. For an error shown ON the page (an online compiler output, a Python traceback, a console log) select it and right-click - Explain with ER Sense, or paste it above. Errors typed into the DevTools console cannot be captured by any extension.">?</span>'
     capturedEl.classList.remove('hidden')
     return
   }
