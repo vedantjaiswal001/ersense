@@ -119,6 +119,10 @@ a:hover { text-decoration: underline; }
   padding: 6px 8px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .captured-item:hover { color: var(--fg); border-color: var(--brand); }
+.captured-idle { display: flex; align-items: center; gap: 8px; border-color: var(--line); background: var(--inset); color: var(--subtle); font-size: 11.5px; }
+.idle-dot { height: 7px; width: 7px; border-radius: 999px; background: var(--success); box-shadow: 0 0 8px var(--success); flex-shrink: 0; animation: idlePulse 1.8s ease-in-out infinite; }
+.idle-hint { margin-left: auto; height: 16px; width: 16px; border-radius: 999px; border: 1px solid var(--line-strong); display: grid; place-items: center; font-size: 10px; cursor: help; color: var(--muted); }
+@keyframes idlePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
 /* Result */
 .result { margin-top: 12px; }

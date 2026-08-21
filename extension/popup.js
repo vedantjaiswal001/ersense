@@ -230,8 +230,11 @@ function firstLine(t) {
 }
 function renderCaptured(errors, tabId) {
   if (!errors.length) {
-    capturedEl.classList.add('hidden')
-    capturedEl.innerHTML = ''
+    capturedEl.className = 'captured captured-idle'
+    capturedEl.innerHTML =
+      '<span class="idle-dot"></span><span>Watching this page &mdash; no errors captured yet.</span>' +
+      '<span class="idle-hint" title="Errors thrown by the page are captured automatically. Errors typed into the DevTools console are reported only to DevTools, so no extension can capture those.">?</span>'
+    capturedEl.classList.remove('hidden')
     return
   }
   const recent = errors.slice(-5).reverse()
@@ -241,6 +244,7 @@ function renderCaptured(errors, tabId) {
     h += `<div class="captured-item" data-idx="${i}" title="${escapeHtml(e.text).slice(0, 300)}">${escapeHtml(firstLine(e.text)).slice(0, 120)}</div>`
   })
   h += '</div>'
+  capturedEl.className = 'captured'
   capturedEl.innerHTML = h
   capturedEl.classList.remove('hidden')
 

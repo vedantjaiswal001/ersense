@@ -16,6 +16,21 @@ The browser version of [ER Sense](https://vedantjaiswal001.github.io/ersense/). 
 3. Click **Load unpacked** and select this `extension/` folder.
 4. Pin the ER Sense icon, click it, open **Settings**, and paste your free Gemini key (optional - offline mode works without one).
 
+## How auto-capture works (and how to test it)
+
+A MAIN-world content script hooks `window.onerror`, `unhandledrejection`, and `console.error` on every page. When the page throws, the error is relayed to the service worker, stored per tab, and the toolbar badge shows the count. Open the popup to see the list and click **Explain latest**.
+
+**Important limitation:** errors you type into the **DevTools Console** (e.g. running `null.foo` there) are *not* captured. The browser reports console-typed exceptions only to DevTools via the inspector protocol - they are never dispatched as the page's `error` event, so no extension can see them (and `chrome.debugger`, the only API that could, can't attach while DevTools is open). This is a browser behavior, not an extension bug. Capture works for real errors thrown by page scripts.
+
+### Reliable test procedure (no DevTools needed)
+
+1. Load the extension (steps above) and open `test/throw.html` from this folder in the browser (drag it into a tab, or serve it).
+2. Click the ER Sense icon once - it should say "Watching this page - no errors captured yet."
+3. Click **Throw TypeError** (or wait ~1s for the page to throw a SyntaxError on its own).
+4. The ER Sense icon shows a **number badge**. Open the popup - the error is listed; click **Explain latest** to analyze it.
+
+This flow was verified end to end by loading the built extension in Chromium and confirming the captured errors and badge count in the service worker's storage.
+
 ## Permissions - why
 
 - `storage` - saves your API key and per-tab captured errors.

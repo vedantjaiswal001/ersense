@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ER Sense - auto-capture test page</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 20px; color: #17171a; }
+      h1 { font-size: 22px; }
+      button { font: inherit; padding: 10px 16px; margin: 6px 8px 6px 0; border-radius: 8px; border: 1px solid #d6d5cf; background: #fff; cursor: pointer; }
+      button:hover { border-color: #e04f24; color: #e04f24; }
+      code { background: #f1f1ee; padding: 2px 5px; border-radius: 4px; }
+      p { line-height: 1.6; }
+    </style>
+  </head>
+  <body>
+    <h1>ER Sense - auto-capture test</h1>
+    <p>
+      Open the ER Sense extension popup first (it should say "Watching this page").
+      Then click a button below to throw a <strong>real page error</strong>. The
+      extension icon should show a number badge, and the popup will list the error.
+    </p>
+    <p>
+      Note: throwing an error by typing it into the <strong>DevTools Console</strong>
+      will <em>not</em> be captured - the browser reports console-typed errors only to
+      DevTools, not as a page <code>error</code> event. Use these buttons instead (or
+      reload the page to fire one automatically after 1 second).
+    </p>
+
+    <button id="b-type">Throw TypeError</button>
+    <button id="b-ref">Throw ReferenceError</button>
+    <button id="b-reject">Unhandled promise rejection</button>
+    <button id="b-console">console.error(...)</button>
+
+    <script>
+      document.getElementById('b-type').addEventListener('click', function () {
+        var x = null
+        return x.foo // TypeError: Cannot read properties of null
+      })
+      document.getElementById('b-ref').addEventListener('click', function () {
+        return notDefinedAnywhere() // ReferenceError
+      })
+      document.getElementById('b-reject').addEventListener('click', function () {
+        Promise.reject(new Error('Something failed asynchronously'))
+      })
+      document.getElementById('b-console').addEventListener('click', function () {
+        console.error('TypeError: cannot read property of undefined at app.js:42')
+      })
+
+      // Fire one automatically shortly after load so you can see capture without clicking.
+      setTimeout(function () {
+        JSON.parse('{ not valid json') // SyntaxError, uncaught
+      }, 1000)
+    </script>
+  </body>
+</html>
