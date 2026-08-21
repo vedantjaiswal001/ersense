@@ -35,8 +35,16 @@
       <main class="main" id="mainView">
         <div id="captured" class="captured hidden"></div>
 
-        <textarea id="input" class="input" spellcheck="false"
-          placeholder="Paste an error, stack trace, or code&#10;&#10;Uncaught TypeError: Cannot read properties of undefined (reading 'map')&#10;    at App (app.js:24:18)"></textarea>
+        <div class="editor" id="editor">
+          <div class="ed-scan" aria-hidden="true"></div>
+          <div class="ed-gutter" id="edGutter" aria-hidden="true"></div>
+          <div class="ed-wrap">
+            <div class="ed-band" id="edBand" aria-hidden="true"></div>
+            <pre class="ed-pre" id="edPre" aria-hidden="true"></pre>
+            <textarea id="input" class="ed-ta" spellcheck="false" wrap="off"
+              placeholder="Paste an error, stack trace, or code&#10;&#10;Uncaught TypeError: Cannot read properties of undefined (reading 'map')&#10;    at App (app.js:24:18)"></textarea>
+          </div>
+        </div>
 
         <div class="actions">
           <span id="meta" class="meta">0 chars</span>

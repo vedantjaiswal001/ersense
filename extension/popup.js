@@ -20,8 +20,17 @@ const meta = $('meta')
 const result = $('result')
 const enginePill = $('engine')
 const capturedEl = $('captured')
+const editor = $('editor')
+const edPre = $('edPre')
+const edGutter = $('edGutter')
+const edBand = $('edBand')
+
+// Must match the editor CSS (font-size 12 * line-height 1.55, padding 10).
+const LINE_H = 12 * 1.55
+const PAD_TOP = 10
 
 let snippets = [] // copy targets
+let bandTimer = null
 
 /* ------------------------------------------------------------------ */
 /*  Chrome helpers                                                     */
@@ -60,6 +69,30 @@ function refreshMeta() {
   const lines = v ? v.split('\n').length : 0
   meta.textContent = `${v.length.toLocaleString()} chars · ${lines} lines`
   explainBtn.disabled = v.trim().length === 0
+  syncEditor()
+}
+
+/* ------------------------------------------------------------------ */
+/*  Syntax-highlighted editor (colored layer + gutter)                 */
+/* ------------------------------------------------------------------ */
+let curLine = 0 // line to mark in the gutter (from a jump), 0 = none
+function syncEditor() {
+  if (!edPre) return
+  const v = input.value
+  // Colored layer sitting behind the transparent-text textarea.
+  edPre.innerHTML = v ? highlightToHTML(v) + '\n' : ''
+  // Line-number gutter.
+  const n = v ? v.split('\n').length : 1
+  let g = ''
+  for (let i = 1; i <= n; i++) g += `<div${i === curLine ? ' class="cur"' : ''}>${i}</div>`
+  edGutter.innerHTML = g
+  syncScroll()
+}
+function syncScroll() {
+  if (!edPre) return
+  edPre.scrollTop = input.scrollTop
+  edPre.scrollLeft = input.scrollLeft
+  edGutter.scrollTop = input.scrollTop
 }
 
 /* ------------------------------------------------------------------ */
@@ -72,6 +105,7 @@ async function explain() {
   running = true
   explainBtn.disabled = true
   explainBtn.innerHTML = '<span class="spinner"></span><span class="btn-label">Analyzing</span>'
+  editor && editor.classList.add('scanning')
   result.innerHTML = ''
   try {
     const out = await analyzeError(raw, { apiKey: getApiKey() })
@@ -81,6 +115,7 @@ async function explain() {
       '<div class="rc"><div class="rc-title">Something went wrong</div><p class="sec">Try again, or check your API key in Settings.</p></div>'
   } finally {
     running = false
+    editor && editor.classList.remove('scanning')
     explainBtn.innerHTML = '<span class="btn-label">Explain</span>'
     explainBtn.disabled = input.value.trim().length === 0
   }
@@ -211,9 +246,25 @@ function jumpToLine(n) {
   const end = start + lines[n - 1].length
   input.focus()
   input.setSelectionRange(start, end)
-  // approximate scroll
-  const lineH = 12 * 1.55 * 1.35
-  input.scrollTop = Math.max(0, (n - 3) * lineH)
+
+  // Scroll the line into view (keep it a few rows from the top).
+  input.scrollTop = Math.max(0, PAD_TOP + (n - 3) * LINE_H)
+
+  // Mark the gutter line and flash a highlight band on it.
+  curLine = n
+  syncEditor()
+  if (edBand) {
+    edBand.style.top = PAD_TOP + (n - 1) * LINE_H - input.scrollTop + 'px'
+    edBand.classList.remove('show')
+    void edBand.offsetWidth // restart the animation
+    edBand.classList.add('show')
+    clearTimeout(bandTimer)
+    bandTimer = setTimeout(() => {
+      curLine = 0
+      edBand.classList.remove('show')
+      syncEditor()
+    }, 2200)
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -321,6 +372,12 @@ $('removeKey').addEventListener('click', () => {
 /*  Wire up                                                            */
 /* ------------------------------------------------------------------ */
 input.addEventListener('input', refreshMeta)
+input.addEventListener('scroll', () => {
+  syncScroll()
+  if (edBand && edBand.classList.contains('show') && curLine) {
+    edBand.style.top = PAD_TOP + (curLine - 1) * LINE_H - input.scrollTop + 'px'
+  }
+})
 input.addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
     e.preventDefault()
