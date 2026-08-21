@@ -20,7 +20,7 @@
     "128": "icons/icon128.png"
   },
   "permissions": ["storage", "activeTab", "contextMenus", "scripting", "sidePanel"],
-  "host_permissions": ["https://generativelanguage.googleapis.com/*"],
+  "host_permissions": ["<all_urls>", "https://generativelanguage.googleapis.com/*"],
   "background": {
     "service_worker": "background.js",
     "type": "module"

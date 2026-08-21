@@ -5,6 +5,7 @@ The browser version of [ER Sense](https://vedantjaiswal001.github.io/ersense/). 
 ## Features
 
 - **Auto-capture** - a content script hooks `window.onerror` and unhandled promise rejections on the top frame of every page. The toolbar icon shows a badge with the count, and the side panel lists the errors so you can explain the latest with one click. (It intentionally does not hook `console.error` - that would capture third-party log noise and mis-attribute every site's logs to the extension.)
+- **Screen capture (AI vision)** - click **Capture**, drag a box around anything on screen - a LeetCode "Wrong Answer" with its code, a compiler's output, a stack trace in a panel - and Gemini reads the image and explains the bug and fix. This is the answer for output that isn't a thrown JavaScript error (server-side judge results, rendered tracebacks) and so can't be auto-captured. Needs a Gemini key (offline mode can't read images).
 - **Right-click to explain** - select any error text on a page, right-click, and choose "Explain with ER Sense".
 - **Docked side panel** - clicking the toolbar icon opens ER Sense as a persistent Chrome side panel (not a transient popup), so it stays open while you browse. Paste an error, stack trace, or code and get the same three modes (Error Explanation, Code Doctor, Debug), issue cards with line numbers, and a Fix All block. The panel refreshes live as new errors are captured and as you switch tabs.
 - **Bring-your-own-key** - add a free Gemini key in the side panel's Settings; stored locally, sent directly to Google. Works offline (built-in error library) with no key.
@@ -38,10 +39,10 @@ This flow was verified end to end by loading the built extension in Chromium and
 ## Permissions - why
 
 - `storage` - saves your API key and per-tab captured errors.
-- `activeTab` / `scripting` - read the current tab so the popup knows which page's errors to show.
+- `activeTab` / `scripting` - read the current tab so the panel knows which page's errors to show, and inject the drag-to-select overlay for screen capture.
 - `contextMenus` - the right-click "Explain" item.
-- `host_permissions: generativelanguage.googleapis.com` - lets the popup call the Gemini API directly (no backend).
-- `<all_urls>` content script - required to detect errors on whatever page you're debugging. It only reads error events; it never sends page content anywhere except the error text you choose to explain.
+- `host_permissions: <all_urls>` - required to detect errors on whatever page you're debugging and to capture the visible tab when you use **Capture**. It only reads error events and the area you deliberately box; it never sends page content anywhere except the text/image you choose to explain.
+- `host_permissions: generativelanguage.googleapis.com` - lets the panel call the Gemini API directly (no backend).
 
 ## How it's built
 

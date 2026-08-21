@@ -230,7 +230,29 @@ export async function discoverModels(apiKey, signal) {
  *  Generation
  * ------------------------------------------------------------------ */
 
-function requestBody(raw, parsed, mode, { noThinkingConfig = false } = {}) {
+const VISION_PROMPT = `MODE: debug
+The input is a SCREENSHOT from a developer's screen - it may be from an online judge (LeetCode, HackerRank), an online compiler, an IDE, a terminal, or a browser.
+
+Read everything relevant in the image: the source code, any error message or stack trace, and any "Wrong Answer" / expected-vs-actual output that is shown.
+- If it shows code together with a wrong/expected output or an error, treat it as debug mode: explain what is going wrong, then list every distinct bug that causes it, most severe first.
+- Transcribe the code accurately from the image.
+- LINE NUMBERS: use a line number ONLY if it is clearly visible in the code's gutter in the screenshot; otherwise set every "line"/"failingLine" to null. Never guess a number that is not visible.
+- "fixedCode" must be the full corrected source you can read from the image.
+- If the image contains no code or error at all, return a result whose summary says no code or error was found in the capture.
+Respond with ONLY the JSON object described in the system instruction.`
+
+function textRequestBody(raw, parsed, mode, { noThinkingConfig = false } = {}) {
+  return assembleBody([{ text: buildUserPrompt(raw, parsed, mode) }], { noThinkingConfig })
+}
+
+function imageRequestBody(base64, mimeType, { noThinkingConfig = false } = {}) {
+  return assembleBody(
+    [{ text: VISION_PROMPT }, { inline_data: { mime_type: mimeType || 'image/png', data: base64 } }],
+    { noThinkingConfig },
+  )
+}
+
+function assembleBody(parts, { noThinkingConfig = false } = {}) {
   const generationConfig = {
     temperature: 0.2,
     topP: 0.9,
@@ -243,7 +265,7 @@ function requestBody(raw, parsed, mode, { noThinkingConfig = false } = {}) {
 
   return {
     system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-    contents: [{ role: 'user', parts: [{ text: buildUserPrompt(raw, parsed, mode) }] }],
+    contents: [{ role: 'user', parts }],
     generationConfig,
   }
 }
@@ -258,15 +280,11 @@ async function post(model, apiKey, body, signal) {
 }
 
 /**
- * Ask Gemini to explain an error/code. Uses the cached working model, else
- * discovers a valid model for this key, else falls back to known names.
- * Returns a normalized result, or throws a GeminiError.
+ * Shared generation loop: try the cached model, then models Google says this
+ * key can use, then known fallbacks. `body`/`bodyNoThink` are prebuilt request
+ * bodies (text or image). Returns a normalized result, or throws GeminiError.
  */
-export async function explainWithGemini(raw, parsed, { apiKey, mode = 'error', signal } = {}) {
-  if (!apiKey) throw new GeminiError('No API key set.', 'auth')
-
-  const body = requestBody(raw, parsed, mode)
-  const bodyNoThink = requestBody(raw, parsed, mode, { noThinkingConfig: true })
+async function generate({ body, bodyNoThink, parsed, mode, apiKey, signal }) {
   const tried = new Set()
   let lastError = null
 
@@ -346,6 +364,41 @@ export async function explainWithGemini(raw, parsed, { apiKey, mode = 'error', s
   if (r3) return r3
 
   throw lastError || new GeminiError('No Gemini model was available for this key.', 'server')
+}
+
+/**
+ * Ask Gemini to explain an error/code. Uses the cached working model, else
+ * discovers a valid model for this key, else falls back to known names.
+ * Returns a normalized result, or throws a GeminiError.
+ */
+export async function explainWithGemini(raw, parsed, { apiKey, mode = 'error', signal } = {}) {
+  if (!apiKey) throw new GeminiError('No API key set.', 'auth')
+  return generate({
+    body: textRequestBody(raw, parsed, mode),
+    bodyNoThink: textRequestBody(raw, parsed, mode, { noThinkingConfig: true }),
+    parsed,
+    mode,
+    apiKey,
+    signal,
+  })
+}
+
+/**
+ * Ask Gemini to read a screenshot (base64 PNG/JPEG, no data: prefix) and
+ * explain the code/error/wrong-output it shows. Vision needs the API key, so
+ * there is no offline fallback for this path. Returns a normalized result.
+ */
+export async function explainImageWithGemini(base64, { apiKey, mimeType = 'image/png', signal } = {}) {
+  if (!apiKey) throw new GeminiError('No API key set.', 'auth')
+  if (!base64) throw new GeminiError('The capture was empty. Select an area with some text in it.', 'parse')
+  return generate({
+    body: imageRequestBody(base64, mimeType),
+    bodyNoThink: imageRequestBody(base64, mimeType, { noThinkingConfig: true }),
+    parsed: null,
+    mode: 'debug',
+    apiKey,
+    signal,
+  })
 }
 
 /**
