@@ -122,4 +122,4 @@ MIT - see [LICENSE](LICENSE).
 
 ---
 
-Made by **Vedant Jaiswal**.
+by **Vedant Jaiswal**.
